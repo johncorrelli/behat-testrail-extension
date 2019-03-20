@@ -15,7 +15,8 @@
     "require": {
         "php": "^7.0",
         "behat/behat": "~3.0",
-        "nategood/httpful": ">=v0.2.20"
+        "nategood/httpful": ">=v0.2.20",
+        "fzaninotto/faker": "^1.7"
     },
     "require-dev": {
     },
