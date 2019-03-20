@@ -44,26 +44,32 @@ class TestrailReporterExtension implements Extension
         $builder->children()->scalarNode("testidPrefix")->defaultValue("test_rail_");
         $builder->children()->arrayNode("customFields")->prototype("scalar");
         $builder->children()->booleanNode("enabled")->defaultTrue();
+        $builder->children()->booleanNode("createTestRun")->defaultFalse();
+        $builder->children()->scalarNode("projectId")->defaultNull();
     }
 
     /**
      * @inheritdoc
      */
     public function load(ContainerBuilder $container, array $config) {
+        $willCreateTestRun = $config['createTestRun'] && $config['projectId'] !== NULL;
+        $willHaveRunId = $config['runId'] !== NULL || $willCreateTestRun;
+
         if (
             $config['enabled'] &&
             $config['baseUrl'] !== NULL &&
             $config['username'] !== NULL &&
             $config['apiKey'] !== NULL &&
-            $config['runId'] !== NULL
+            $willHaveRunId
         ) {
             $definition = new Definition("flexperto\\BehatTestrailReporter\\testrail\\TestrailReporter");
             $definition->addArgument($config['baseUrl']);
             $definition->addArgument($config['username']);
             $definition->addArgument($config['apiKey']);
-            $definition->addArgument($config['runId']);
             $definition->addArgument($config['testidPrefix']);
             $definition->addArgument($config['customFields']);
+            $definition->addArgument($config['runId']);
+            $definition->addArgument($config['projectId']);
 
             $container->setDefinition("testrail.reporter", $definition)->addTag('event_dispatcher.subscriber');
         }

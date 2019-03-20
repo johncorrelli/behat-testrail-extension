@@ -29,12 +29,20 @@ class TestrailReporter implements EventSubscriberInterface
     /** @var  string last error message caught from failing scenario step. Should be cleared explicitly on AfterScenario*/
     private $lastErrorMessage;
 
-    public function __construct(string $baseUrl, string $username, string $apiKey, string $runId, string $testidPrefix, array $customFields)
+    /** @var string test rail run id that should be updated with test results */
+    private $runId;
+
+    /** @var bool test rail projectId used to create the new test run */
+    private $projectId;
+
+    public function __construct(string $baseUrl, string $username, string $apiKey, string $testidPrefix, array $customFields, ?string $runId, ?string $projectId)
     {
-        $this->testrailApiClient = new TestrailApiClient($baseUrl, $username, $apiKey, $runId);
+        $this->testrailApiClient = new TestrailApiClient($baseUrl, $username, $apiKey);
         $this->testIdPrefix = $testidPrefix;
         $this->customFields = $customFields;
         $this->pendingResultsAccumulator = [];
+        $this->runId = $runId;
+        $this->projectId = $projectId;
     }
 
     public static function getSubscribedEvents() {
@@ -48,6 +56,19 @@ class TestrailReporter implements EventSubscriberInterface
         ];
     }
 
+    public function getRunId()
+    {
+        if (!$this->runId && $this->projectId !== null) {
+            $this->onCreateTestRun($this->projectId);
+        }
+
+        return $this->runId;
+    }
+
+    public function onCreateTestRun(string $projectId)
+    {
+        $this->runId = $this->testrailApiClient->createTestRun($projectId);
+    }
 
     public function onBeforeScenarioTested(BeforeScenarioTested $event) {
         if ($this->isScenarioApplicable($event)) {
@@ -116,7 +137,10 @@ class TestrailReporter implements EventSubscriberInterface
     private function featureFinished()
     {
         if (sizeof($this->pendingResultsAccumulator) > 0) {
-            $this->testrailApiClient->pushResultsBatch($this->pendingResultsAccumulator);
+            $this->testrailApiClient->pushResultsBatch(
+                $this->getRunId(),
+                $this->pendingResultsAccumulator
+            );
         }
         $this->pendingResultsAccumulator = [];
     }
