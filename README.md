@@ -31,11 +31,20 @@ When enabled and configured, will send API requests to testrail instance and upd
                   username: erika.mustermann@mycompany.com
                   apiKey: tesrailapikey.generatedforusernameabove
                   runId: 1
+                  createTestRun: true
+                  projectId: 1
                   customFields:
                     custom_environment: '1'   
     ```
     
-`enabled` field is true by default. However plugin won't start if any required fields (`baseUrl`, `username`, `apiKey`, `runId` ) are not set.
+`enabled` field is true by default. However plugin won't start if any required fields (`baseUrl`, `username`, `apiKey`) are not set and both of the conditions below are not met.
+
+Conditions:
+1. `runId`: If you want to attach results to an existing test run, set the `runId` to the respective `runId`
+1. `createTestRun` is true and `projectId` is set: If you want to create a new test run each time your behat tests are executed.
+    - This can be useful in a CI situation where your behat tests are automatically ran.
+
+`runId` takes priority. If both conditions are met, the results will be attached to the specified `runId` and a new test run will *not* be created.
 
 If `testidPrefix` is not set, the default will be `test_rail_`
 
